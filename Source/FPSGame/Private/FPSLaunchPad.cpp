@@ -31,16 +31,20 @@ void AFPSLaunchPad::BeginPlay()
 void AFPSLaunchPad::HandleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	FRotator LaunchDirection = GetActorRotation();
+	LaunchDirection.Pitch += 35;
+	const FVector LaunchVelocity = LaunchDirection.Vector() * 1000;
+	
 	UE_LOG(LogTemp, Warning, TEXT("Launch pad overlap"));
 	if (const auto MyPawn = Cast<AFPSCharacter>(OtherActor))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Launch pad overlap character"));
-		MyPawn->LaunchCharacter(FVector(1, 0, 1) * 1000, false, false);
+		MyPawn->LaunchCharacter(LaunchVelocity, false, false);
 	}
 	else if (OtherComp && OtherComp->IsSimulatingPhysics())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Launch pad overlap component"));
-		OtherComp->AddForce(FVector(1, 0, 1) * 100000, NAME_None, true);
+		OtherComp->AddForce(LaunchVelocity * 100, NAME_None, true);
 	}
 }
 
