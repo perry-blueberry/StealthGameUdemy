@@ -29,6 +29,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category=Components)
 	class UDecalComponent* DecalComp;
 
+	UPROPERTY(EditDefaultsOnly, Category=Sounds)
+	class USoundBase* ObjectiveMissingSound;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
