@@ -18,6 +18,11 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category=GameMode)
 	void OnMissionCompleted(APawn* InstigatorPawn);
+
+protected:
+	// Type of class to search for
+	UPROPERTY(EditDefaultsOnly, Category=Spectating)
+	TSubclassOf<AActor> SpectatingViewpointClass;
 };
 
 
