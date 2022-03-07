@@ -34,13 +34,13 @@ void AFPSAiGuard::OnPawnSeen(APawn* SeenPawn)
 	DrawDebugSphere(GetWorld(), SeenPawn->GetActorLocation(), 32, 12, FColor::Red, false, 10);
 }
 
-void AFPSAiGuard::OnNoiseHeard(APawn* Instigator, const FVector& Location, float Volume)
+void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume)
 {
-	if (!Instigator)
+	if (!NoiseInstigator)
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Heard pawn"));
+	UE_LOG(LogTemp, Warning, TEXT("Heard pawn %d"), Volume);
 	DrawDebugSphere(GetWorld(), Location, 32, 12, FColor::Green, false, 10);
 }
 
