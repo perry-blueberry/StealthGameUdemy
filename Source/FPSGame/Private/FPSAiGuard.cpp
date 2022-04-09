@@ -3,6 +3,7 @@
 
 #include "FPSAiGuard.h"
 
+#include "AIController.h"
 #include "DrawDebugHelpers.h"
 #include "FPSCharacter.h"
 #include "FPSGameMode.h"
@@ -20,6 +21,7 @@ AFPSAiGuard::AFPSAiGuard()
 	PawnSensingComp->OnHearNoise.AddDynamic(this, &AFPSAiGuard::OnNoiseHeard);
 
 	GuardState = EAiState::Idle;
+	CurrentTargetPointIndex = 0;
 }
 
 // Called when the game starts or when spawned
@@ -27,6 +29,16 @@ void AFPSAiGuard::BeginPlay()
 {
 	Super::BeginPlay();
 	OriginalRotation = GetActorRotation();
+
+	if (const auto PossessingAiController = Cast<AAIController>(GetController()))
+	{
+		AiController = PossessingAiController;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Unable to get possessing AI controller"));
+		Destroy();
+	}
 }
 
 void AFPSAiGuard::OnPawnSeen(APawn* SeenPawn)
@@ -40,7 +52,7 @@ void AFPSAiGuard::OnPawnSeen(APawn* SeenPawn)
 	// TargetRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), SeenPawn->GetActorLocation());
 	if (Cast<AFPSCharacter>(SeenPawn))
 	{
-		if (auto MyGameMode = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode()))
+		if (const auto MyGameMode = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			MyGameMode->CompleteMission(SeenPawn, false);
 		}	
@@ -49,7 +61,9 @@ void AFPSAiGuard::OnPawnSeen(APawn* SeenPawn)
 	SetGuardState(EAiState::Alerted);
 }
 
-void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume)
+// ReSharper disable CppParameterMayBeConstPtrOrRef
+void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, const float Volume)
+// ReSharper restore CppParameterMayBeConstPtrOrRef
 {
 	if (!NoiseInstigator || GuardState == EAiState::Alerted)
 	{
@@ -66,17 +80,23 @@ void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, 
 	TargetRotation.Pitch = GetActorRotation().Pitch;
 	TargetRotation.Roll = GetActorRotation().Roll;
 
+	AiController->PauseMove(AiController->GetCurrentMoveRequestID());
 	SetGuardState(EAiState::Suspicious);
+	FTimerDelegate SetGuardDelegate;
+	SetGuardDelegate.BindLambda([this](){SetGuardState(EAiState::Idle);});
+	// SetGuardDelegate.BindUFunction(this, FName("SetGuardState"), EPathFollowingStatus::Idle);//::CreateUObject( this, &AFPSAiGuard::SetGuardState, EPathFollowingStatus::Idle );
+	GetWorldTimerManager().SetTimer(ResetOrientationTimerHandle, SetGuardDelegate, 3.0f, false);
 }
 
 void AFPSAiGuard::SetGuardState(const EAiState NewGuardState)
 {
-	if (NewGuardState == GuardState)
+	if (NewGuardState == GuardState || GuardState == EAiState::Alerted)
 	{
 		return;
 	}
 	GuardState = NewGuardState;
 	OnStateChanged(GuardState);
+	AiController->ResumeMove(AiController->GetCurrentMoveRequestID());
 }
 
 void AFPSAiGuard::ResetOrientation()
@@ -97,16 +117,36 @@ void AFPSAiGuard::Tick(float DeltaTime)
 	const auto NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 1);
 	SetActorRotation(NewRotation);
 
-	const auto CurrentTime = GetWorld()->TimeSeconds;
-	if (CurrentTime - LastTimePrinted > 2)
+	if (const auto CurrentTime = GetWorld()->TimeSeconds; CurrentTime - LastTimePrinted > 2)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Actor rotation: %f ----------- TargetRotation: %f ------------------------- OriginalRotation: %f"),
 			   GetActorRotation().Yaw, TargetRotation.Yaw, OriginalRotation.Yaw);
 		LastTimePrinted = CurrentTime;
 	}
-	if (GetActorRotation().Equals(TargetRotation, 0.1) && !TargetRotation.Equals(OriginalRotation, 0.1) && !GetWorldTimerManager().IsTimerActive(ResetOrientationTimerHandle))
+
+	// Moving guard
+	if (TargetPoints.Num() >= 2)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Setting timer"));
-		GetWorldTimerManager().SetTimer(ResetOrientationTimerHandle, this, &AFPSAiGuard::ResetOrientation, 1.0f);
+		// Patrol to new target
+		if (GuardState == EAiState::Idle && AiController->GetMoveStatus() != EPathFollowingStatus::Moving)
+		{
+			CurrentTargetPointIndex = ++CurrentTargetPointIndex % TargetPoints.Num();
+			const auto NewTarget = TargetPoints[CurrentTargetPointIndex];
+			AiController->MoveToActor(NewTarget);
+			auto Direction = NewTarget->GetActorLocation() - GetActorLocation();
+			Direction.Normalize();
+			TargetRotation = FRotationMatrix::MakeFromX(Direction).Rotator();
+			TargetRotation.Pitch = GetActorRotation().Pitch;
+			TargetRotation.Roll = GetActorRotation().Roll;
+		}
+	}
+	// Stationary guard
+	else
+	{
+		if (GetActorRotation().Equals(TargetRotation, 0.1) && !TargetRotation.Equals(OriginalRotation, 0.1) && !GetWorldTimerManager().IsTimerActive(ResetOrientationTimerHandle))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Setting timer"));
+			GetWorldTimerManager().SetTimer(ResetOrientationTimerHandle, this, &AFPSAiGuard::ResetOrientation, 1.0f);
+		}
 	}
 }
