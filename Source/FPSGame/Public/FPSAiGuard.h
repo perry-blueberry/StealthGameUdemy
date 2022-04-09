@@ -6,6 +6,14 @@
 #include "GameFramework/Character.h"
 #include "FPSAiGuard.generated.h"
 
+UENUM(BlueprintType)
+enum class EAiState : uint8
+{
+	Idle,
+	Suspicious,
+	Alerted
+};
+
 UCLASS()
 class FPSGAME_API AFPSAiGuard : public ACharacter
 {
@@ -19,17 +27,21 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, Category=Components)
-	class UPawnSensingComponent* PawnSensingComp;
 
 	UFUNCTION()
 	void OnPawnSeen(class APawn* SeenPawn);
 
 	UFUNCTION()
 	void OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume);
-	
+
 	UFUNCTION()
-	void ResetOrientation(); 
+	void ResetOrientation();
+
+	UFUNCTION(BlueprintImplementableEvent, Category=AI)
+	void OnStateChanged(EAiState NewState);
+
+	UPROPERTY(VisibleAnywhere, Category=Components)
+	class UPawnSensingComponent* PawnSensingComp;
 
 	FTimerHandle ResetOrientationTimerHandle;
 	FRotator TargetRotation;
@@ -37,7 +49,9 @@ protected:
 
 	float LastTimePrinted = 0;
 
-public:	
+	EAiState GuardState;
+public:
+	void SetGuardState(const EAiState NewGuardState);
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
