@@ -16,7 +16,7 @@ AFPSGameMode::AFPSGameMode()
 	HUDClass = AFPSHUD::StaticClass();
 }
 
-void AFPSGameMode::CompleteMission(APawn* InstigatorPawn)
+void AFPSGameMode::CompleteMission(APawn* InstigatorPawn, bool bMissionComplete)
 {
 	if (InstigatorPawn)
 	{
@@ -30,5 +30,5 @@ void AFPSGameMode::CompleteMission(APawn* InstigatorPawn)
 			PlayerController->SetViewTarget(Spectators[0]);
 		}
 	}
-	OnMissionCompleted(InstigatorPawn);
+	OnMissionCompleted(InstigatorPawn, bMissionComplete);
 }

@@ -4,6 +4,8 @@
 #include "FPSAiGuard.h"
 
 #include "DrawDebugHelpers.h"
+#include "FPSCharacter.h"
+#include "FPSGameMode.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Perception/PawnSensingComponent.h"
 
@@ -34,6 +36,13 @@ void AFPSAiGuard::OnPawnSeen(APawn* SeenPawn)
 	UE_LOG(LogTemp, Warning, TEXT("Seen pawn"));
 	DrawDebugSphere(GetWorld(), SeenPawn->GetActorLocation(), 32, 12, FColor::Red, false, 10);
 	// TargetRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), SeenPawn->GetActorLocation());
+	if (Cast<AFPSCharacter>(SeenPawn))
+	{
+		if (auto MyGameMode = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			MyGameMode->CompleteMission(SeenPawn, false);
+		}	
+	}
 }
 
 void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume)
