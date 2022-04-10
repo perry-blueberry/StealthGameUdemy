@@ -52,13 +52,11 @@ void ASTrackerBot::Tick(float DeltaTime)
 		auto ForceDirection = NextPathPoint - GetActorLocation();
 		ForceDirection.Normalize();
 		ForceDirection *= MovementForce;
-		UE_LOG(LogTemp, Warning, TEXT("Applying force"));
 		MeshComponent->AddForce(ForceDirection);
 		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceDirection, 20, FColor::Red, false, 2, 1);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Getting next path point"));
 		NextPathPoint = GetNextPathPoint();
 	}
 	DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 4, 1);

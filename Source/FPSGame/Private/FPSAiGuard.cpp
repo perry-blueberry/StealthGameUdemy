@@ -96,7 +96,10 @@ void AFPSAiGuard::SetGuardState(const EAiState NewGuardState)
 	}
 	GuardState = NewGuardState;
 	OnStateChanged(GuardState);
-	AiController->ResumeMove(AiController->GetCurrentMoveRequestID());
+	if (GuardState == EAiState::Idle)
+	{
+		AiController->ResumeMove(AiController->GetCurrentMoveRequestID());	
+	}
 }
 
 void AFPSAiGuard::ResetOrientation()
@@ -110,23 +113,29 @@ void AFPSAiGuard::ResetOrientation()
 }
 
 // Called every frame
-void AFPSAiGuard::Tick(float DeltaTime)
+void AFPSAiGuard::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	const auto NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 1);
 	SetActorRotation(NewRotation);
 
-	if (const auto CurrentTime = GetWorld()->TimeSeconds; CurrentTime - LastTimePrinted > 2)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Actor rotation: %f ----------- TargetRotation: %f ------------------------- OriginalRotation: %f"),
-			   GetActorRotation().Yaw, TargetRotation.Yaw, OriginalRotation.Yaw);
-		LastTimePrinted = CurrentTime;
-	}
+	// if (const auto CurrentTime = GetWorld()->TimeSeconds; CurrentTime - LastTimePrinted > 2)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("Actor rotation: %f ----------- TargetRotation: %f ------------------------- OriginalRotation: %f"),
+	// 		   GetActorRotation().Yaw, TargetRotation.Yaw, OriginalRotation.Yaw);
+	// 	LastTimePrinted = CurrentTime;
+	// }
 
 	// Moving guard
 	if (TargetPoints.Num() >= 2)
 	{
+		if (const auto CurrentTime = GetWorld()->TimeSeconds; CurrentTime - LastTimePrinted > 1)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Actor rotation: %f ----------- TargetRotation: %f ------------------------- OriginalRotation: %f"),
+				   GetActorRotation().Yaw, TargetRotation.Yaw, OriginalRotation.Yaw);
+			LastTimePrinted = CurrentTime;
+		}
 		// Patrol to new target
 		if (GuardState == EAiState::Idle && AiController->GetMoveStatus() != EPathFollowingStatus::Moving)
 		{
@@ -145,7 +154,6 @@ void AFPSAiGuard::Tick(float DeltaTime)
 	{
 		if (GetActorRotation().Equals(TargetRotation, 0.1) && !TargetRotation.Equals(OriginalRotation, 0.1) && !GetWorldTimerManager().IsTimerActive(ResetOrientationTimerHandle))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Setting timer"));
 			GetWorldTimerManager().SetTimer(ResetOrientationTimerHandle, this, &AFPSAiGuard::ResetOrientation, 1.0f);
 		}
 	}
