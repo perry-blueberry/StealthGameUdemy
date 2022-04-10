@@ -132,7 +132,7 @@ void AFPSAiGuard::Tick(float DeltaTime)
 		{
 			CurrentTargetPointIndex = ++CurrentTargetPointIndex % TargetPoints.Num();
 			const auto NewTarget = TargetPoints[CurrentTargetPointIndex];
-			AiController->MoveToActor(NewTarget);
+			AiController->MoveToActor(NewTarget); //UNavigationSystemV1::SimpleMoveToActor(AiController, NewTarget);
 			auto Direction = NewTarget->GetActorLocation() - GetActorLocation();
 			Direction.Normalize();
 			TargetRotation = FRotationMatrix::MakeFromX(Direction).Rotator();
