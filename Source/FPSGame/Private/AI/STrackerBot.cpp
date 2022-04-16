@@ -32,10 +32,12 @@ void ASTrackerBot::BeginPlay()
 
 FVector ASTrackerBot::GetNextPathPoint()
 {
-	const auto NavigationPath = UNavigationSystemV1::FindPathToActorSynchronously(this, GetActorLocation(), UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-	if (auto PathPoints = NavigationPath->PathPoints; PathPoints.Num() > 1)
+	if (const auto NavigationPath = UNavigationSystemV1::FindPathToActorSynchronously(this, GetActorLocation(), UGameplayStatics::GetPlayerPawn(GetWorld(), 0)))
 	{
-		return PathPoints[1];
+		if (auto PathPoints = NavigationPath->PathPoints; PathPoints.Num() > 1)
+		{
+			return PathPoints[1];
+		}	
 	}
 	return GetActorLocation();
 }

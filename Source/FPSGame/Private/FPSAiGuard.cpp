@@ -65,7 +65,7 @@ void AFPSAiGuard::OnPawnSeen(APawn* SeenPawn)
 void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, const float Volume)
 // ReSharper restore CppParameterMayBeConstPtrOrRef
 {
-	if (!NoiseInstigator || GuardState == EAiState::Alerted)
+	if (!NoiseInstigator || GuardState == EAiState::Alerted || !AiController)
 	{
 		return;
 	}
@@ -90,7 +90,7 @@ void AFPSAiGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, 
 
 void AFPSAiGuard::SetGuardState(const EAiState NewGuardState)
 {
-	if (NewGuardState == GuardState || GuardState == EAiState::Alerted)
+	if (NewGuardState == GuardState || GuardState == EAiState::Alerted || !AiController)
 	{
 		return;
 	}
@@ -115,6 +115,10 @@ void AFPSAiGuard::ResetOrientation()
 // Called every frame
 void AFPSAiGuard::Tick(const float DeltaTime)
 {
+	if (!AiController)
+	{
+		return;
+	}
 	Super::Tick(DeltaTime);
 
 	const auto NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 1);
