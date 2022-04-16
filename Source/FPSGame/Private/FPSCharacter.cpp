@@ -49,6 +49,17 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 }
 
+void AFPSCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!IsLocallyControlled())
+	{
+		FRotator NewRotation = CameraComponent->GetRelativeRotation();
+		NewRotation.Pitch = RemoteViewPitch * 360.f / 255.f;
+		CameraComponent->SetRelativeRotation(NewRotation);
+	}
+}
+
 
 void AFPSCharacter::Fire()
 {
@@ -77,9 +88,9 @@ void AFPSCharacter::ServerFire_Implementation()
 	if (ProjectileClass)
 	{
 		// Grabs location from the mesh that must have a socket called "Muzzle" in his skeleton
-		FVector MuzzleLocation = GunMeshComponent->GetSocketLocation("Muzzle");
+		const FVector MuzzleLocation = GunMeshComponent->GetSocketLocation("Muzzle");
 		// Use controller rotation which is our view direction in first person
-		FRotator MuzzleRotation = GetControlRotation();
+		const FRotator MuzzleRotation = GetControlRotation();
 
 		//Set Spawn Collision Handling Override
 		FActorSpawnParameters ActorSpawnParams;
