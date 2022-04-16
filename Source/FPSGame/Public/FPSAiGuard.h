@@ -20,7 +20,7 @@ enum class EAiState : uint8
 UCLASS()
 // ReSharper disable CppClassCanBeFinal
 class FPSGAME_API AFPSAiGuard : public ACharacter
-// ReSharper restore CppClassCanBeFinal
+	// ReSharper restore CppClassCanBeFinal
 {
 	GENERATED_BODY()
 
@@ -31,7 +31,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+
 	UFUNCTION()
 	void OnPawnSeen(class APawn* SeenPawn);
 
@@ -62,10 +62,16 @@ protected:
 
 	float LastTimePrinted = 0;
 	int CurrentTargetPointIndex;
+
+	UPROPERTY(ReplicatedUsing=OnRep_GuardState, BlueprintReadWrite)
 	EAiState GuardState;
 
+	UFUNCTION()
+	void OnRep_GuardState();
 
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

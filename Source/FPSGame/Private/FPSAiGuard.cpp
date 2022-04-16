@@ -7,6 +7,7 @@
 #include "DrawDebugHelpers.h"
 #include "FPSCharacter.h"
 #include "FPSGameMode.h"
+#include "UnrealNetwork.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Perception/PawnSensingComponent.h"
 
@@ -95,7 +96,7 @@ void AFPSAiGuard::SetGuardState(const EAiState NewGuardState)
 		return;
 	}
 	GuardState = NewGuardState;
-	OnStateChanged(GuardState);
+	OnRep_GuardState();
 	if (GuardState == EAiState::Idle)
 	{
 		AiController->ResumeMove(AiController->GetCurrentMoveRequestID());	
@@ -110,6 +111,11 @@ void AFPSAiGuard::ResetOrientation()
 	}
 	TargetRotation = OriginalRotation;
 	SetGuardState(EAiState::Idle);
+}
+
+void AFPSAiGuard::OnRep_GuardState()
+{
+	OnStateChanged(GuardState);
 }
 
 // Called every frame
@@ -161,4 +167,11 @@ void AFPSAiGuard::Tick(const float DeltaTime)
 			GetWorldTimerManager().SetTimer(ResetOrientationTimerHandle, this, &AFPSAiGuard::ResetOrientation, 1.0f);
 		}
 	}
+}
+
+void AFPSAiGuard::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AFPSAiGuard, GuardState);
 }
