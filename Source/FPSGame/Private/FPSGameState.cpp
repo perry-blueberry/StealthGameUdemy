@@ -3,14 +3,20 @@
 
 #include "FPSGameState.h"
 
-void AFPSGameState::MulticastOnMissionComplete_Implementation(APawn* InstigatorPawn, bool bMissionSuccess)
+#include "FPSPlayerController.h"
+
+void AFPSGameState::MulticastOnMissionComplete_Implementation(APawn* InstigatorPawn, const bool bMissionSuccess)
 {
 	for (auto PlayerControllerIterator = GetWorld()->GetPlayerControllerIterator(); PlayerControllerIterator; ++PlayerControllerIterator)
 	{
-		APlayerController* PlayerController = PlayerControllerIterator->Get();
-		if (const auto Pawn = PlayerController->GetPawn(); Pawn->IsLocallyControlled())
+		if (AFPSPlayerController* PlayerController = Cast<AFPSPlayerController>(PlayerControllerIterator->Get()); PlayerController && PlayerController->IsLocalController())
 		{
-			Pawn->DisableInput(PlayerController);
+			PlayerController->OnMissionCompleted(InstigatorPawn, bMissionSuccess);
+
+			if (const auto Pawn = PlayerController->GetPawn())
+			{
+				Pawn->DisableInput(PlayerController);
+			}
 		}
 	}
 }

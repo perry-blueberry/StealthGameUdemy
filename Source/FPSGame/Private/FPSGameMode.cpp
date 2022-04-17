@@ -25,9 +25,12 @@ void AFPSGameMode::CompleteMission(APawn* InstigatorPawn, const bool bMissionCom
 	{
 		TArray<AActor*> Spectators;
 		UGameplayStatics::GetAllActorsOfClass(this, SpectatingViewpointClass, Spectators);
-		if (const auto PlayerController = Cast<APlayerController>(InstigatorPawn->GetController()); PlayerController && Spectators.Num() > 0)
+		for (auto PlayerControllerIterator = GetWorld()->GetPlayerControllerIterator(); PlayerControllerIterator; ++PlayerControllerIterator)
 		{
-			PlayerController->SetViewTarget(Spectators[0]);
+			if (const auto PlayerController = PlayerControllerIterator->Get(); PlayerController && Spectators.Num() > 0)
+			{
+				PlayerController->SetViewTarget(Spectators[0]);
+			}
 		}
 	}
 	if (const auto GameState = GetGameState<AFPSGameState>())
